@@ -1,0 +1,64 @@
+﻿@page "/"
+@using NocoBaseAPITester.Models
+@inject HttpClient client
+@inject ISnackbar snackbar
+
+<PageTitle>Tester</PageTitle>
+<div style="display: flex; flex-direction: row">
+    <MudField Variant="Variant.Outlined">
+        <MudTextField @bind-Value="url" Variant="Variant.Outlined" Label="URL" Clearable />
+        <MudTextField @bind-Value="token" Variant="Variant.Outlined" Label="Token" InputType="InputType.Password" />
+    </MudField>
+    <MudButton Variant="Variant.Filled" Color="Color.Tertiary" OnClick="Fetch" DropShadow="false">Get</MudButton>
+</div>
+@if (result != null)
+{
+    <MudField Variant="Variant.Outlined">
+        <MudSimpleTable Elevation="0">
+            <thead>
+                <tr>
+                    @foreach (string key in result.Data.Keys)
+                    {
+                        <th>@key</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var data in result.Data)
+                {
+                    <tr>
+                        @foreach (var item in data.Values)
+                        {
+                            <td>@item</td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    </MudField>
+}
+
+@code {
+    private string url = "http://localhost:13000/api/";
+    private string token = "";
+    private NocoBaseResponse? result;
+
+    private async Task Fetch()
+    {
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        try
+        {
+            result = await client.GetFromJsonAsync<NocoBaseResponse>(url) ?? null;
+            snackbar.Add("Request succeeded", Severity.Success);
+        }
+        catch (HttpRequestException e)
+        {
+            snackbar.Add($"Request failed: {e.StatusCode}", Severity.Warning);
+        }
+        catch (Exception e)
+        {
+            snackbar.Add("Critical error occurred", Severity.Error);
+            Console.WriteLine(e.Message);
+        }
+    }
+}
